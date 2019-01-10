@@ -5,6 +5,7 @@ const router = express.Router()
 
 // Issue CRUD Operations
 router.get('/', ctrl.getIssues)
+router.get('/deadline', ctrl.getDeadlineApproachingIssues)
 router.get('/count', ctrl.getIssueCountByConditions)
 router.get('/:id', ctrl.getIssueById)
 

@@ -57,7 +57,9 @@ const IssueSchema = new Schema({
 
   assignees: [userSchema],
 
-  labels: [labelSchema]
+  labels: [labelSchema],
+
+  deadline: Date
 })
 
 module.exports = connection => connection.model('issue', IssueSchema)

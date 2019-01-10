@@ -36,6 +36,28 @@ module.exports.getIssues = (req, res) => {
     })
 }
 
+module.exports.getDeadlineApproachingIssues = (req, res) => {
+  const {
+    repos: { issues }
+  } = res.locals
+
+  const { deadlineBefore } = req.query
+
+  try {
+    const date = new Date(deadlineBefore)
+
+    issues
+      .find({ isOpen: true, deadline: { $lte: date } })
+      .then(results => res.status(200).json({ results }))
+      .catch(e => {
+        throw e
+      })
+  } catch (e) {
+    console.log(e)
+    res.status(500).send()
+  }
+}
+
 module.exports.getIssueById = (req, res) => {
   const {
     repos: { issues }
