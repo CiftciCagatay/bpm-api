@@ -10,6 +10,7 @@ console.log(`Starting with ${service.onPremise ? 'onPrem' : 'cloud'} mode...`)
 
 getTenants()
   .then(async tenants => {
+    console.log(tenants)
     // Create db connections for each tenant
     let connections = await createDatabaseConnections(tenants)
 
