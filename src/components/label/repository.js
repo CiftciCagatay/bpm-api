@@ -1,10 +1,6 @@
-const {
-  Types: { ObjectId }
-} = require('mongoose')
-
 const repository = Label => {
   const find = ({ unit }) => {
-    let query = unit ? { unit: ObjectId(unit) } : {}
+    let query = unit ? { unit } : {}
     return Label.find(query).sort({ text: 1 })
   }
   

@@ -8,14 +8,11 @@ const {
 
 module.exports.getIssues = (req, res) => {
   const {
-    repos: { issues }
+    repos: { issues },
+    user: { unit, permissions }
   } = res.locals
 
   var { limit, offset, orderBy, ...rest } = req.query
-
-  const {
-    user: { unit, roles }
-  } = res.locals
 
   limit = parseInt(limit) || 0
   offset = parseInt(offset) || 0
@@ -23,10 +20,10 @@ module.exports.getIssues = (req, res) => {
 
   let query = { limit, offset, orderBy }
 
-  if (!roles.includes('helpdesk:admin')) {
+  if (!permissions.includes('read:all_tasks')) {
     query.unit = unit
   }
-
+  
   issues
     .find({ ...query, ...rest })
     .then(result => res.status(200).json({ result }))

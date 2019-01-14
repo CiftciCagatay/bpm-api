@@ -8,11 +8,18 @@ const {
 
 module.exports.getIssueEvents = (req, res) => {
   const {
-    repos: { issueEvents }
+    repos: { issueEvents },
+    user: { unit, permissions }
   } = res.locals
 
+  let query = req.query
+
+  if (!permissions.includes('read:all_events')) {
+    query.unit = unit
+  }
+
   issueEvents
-    .find(req.query)
+    .find(query)
     .then(result => res.status(200).json({ result }))
     .catch(error => {
       console.log(error)
@@ -44,7 +51,7 @@ module.exports.getUnreadEventCount = (req, res) => {
 
 module.exports.createIssueEvent = (req, res) => {
   const {
-    repos: { issueEvents }
+    repos: { issueEvents, issues }
   } = res.locals
 
   const { tenantId } = res.locals.user
@@ -52,6 +59,8 @@ module.exports.createIssueEvent = (req, res) => {
   issueEvents
     .create(req.body)
     .then(result => {
+      issues.update(req.body.issueId, {}).catch(err => console.log(err))
+
       // Yorum yapıldı mesajını AMQP kanalından ilet
       if (result.type === 'comment') {
         const { author, comment, issueId } = result
@@ -78,7 +87,7 @@ module.exports.markEventsRead = (req, res) => {
   } = res.locals
 
   const { issueId } = req.query
-console.log(_id)
+  console.log(_id)
   issueEvents
     .markEventsRead({ userId: _id, issueId })
     .then(res => res.status(200).json(res))

@@ -2,7 +2,7 @@ const repository = Issue => {
   const find = ({ orderBy, limit, offset, ...params }, projection = {}) => {
     const query = createQueryByParams(params)
     let sort = {}
-
+    
     sort[orderBy] = -1
 
     return Issue.find(query, projection)
