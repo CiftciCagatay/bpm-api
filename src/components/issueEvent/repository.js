@@ -21,16 +21,7 @@ const repository = IssueEvent => {
       .sort({ [orderBy]: orderDes })
       .limit(limit)
   }
-
-  const getUnreadEventCount = ({ userId, issueId }) =>
-    IssueEvent.countDocuments({ issueId, [`readBy.${userId}`]: undefined })
-
-  const markEventsRead = ({ userId, issueId }) =>
-    IssueEvent.update(
-      { issueId, [`readBy.${userId}`]: undefined },
-      { [`readBy.${userId}`]: new Date() }
-    )
-
+  
   const create = props => {
     const issueEvent = new IssueEvent({ ...props, date: new Date() })
     return issueEvent.save()
