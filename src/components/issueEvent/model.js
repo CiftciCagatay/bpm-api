@@ -1,5 +1,3 @@
-const mongoose = require('mongoose')
-
 const labelSchema = {
   text: String,
   colorCode: String
@@ -11,27 +9,23 @@ const userSchema = {
 }
 
 const IssueEventSchema = {
-  issueId: String,
-  type: String,
+  issueId: {
+    type: String,
+    required: true
+  },
+  unitId: String,
+  type: {
+    type: String,
+    required: true
+  },
   date: Date,
   comment: String,
   author: userSchema,
   labels: [labelSchema],
   users: [userSchema],
-  files: [
-    {
-      path: String,
-      filename: String,
-      mimetype: String,
-      originalname: String
-    }
-  ],
   file: Object,
   updatedAt: Date,
-  updatedBy: String,
-  readBy: Object
+  updatedBy: String
 }
-
-// readBy => { userId: readAt-(Date) }
 
 module.exports = connection => connection.model('issueEvent', IssueEventSchema)
