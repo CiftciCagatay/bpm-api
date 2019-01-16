@@ -3,7 +3,8 @@ const {
   amqp: {
     queues: { bpmQueue },
     actions: { ISSUE_CREATED, ISSUE_ASSIGNED, ISSUE_REOPENED, ISSUE_SOLVED }
-  }
+  },
+  permissions: { READ_ALL_TASKS }
 } = require('../../config')
 
 module.exports.getIssues = (req, res) => {
@@ -20,10 +21,10 @@ module.exports.getIssues = (req, res) => {
 
   let query = { limit, offset, orderBy }
 
-  if (!permissions.includes('read:all_tasks')) {
+  if (!permissions.includes(READ_ALL_TASKS)) {
     query.unit = unit
   }
-  
+
   issues
     .find({ ...query, ...rest })
     .then(result => res.status(200).json({ result }))
@@ -301,16 +302,16 @@ module.exports.getIssuesByUsersReport = (req, res) => {
     isOpen: 'true'
   }
 
-  if (user.roles.includes('helpdesk:admin')) {
+  if (user.permissions.includes(READ_ALL_TASKS)) {
     if (units) {
       try {
-        query['units'] = JSON.parse(units)
+        query.units = JSON.parse(units)
       } catch (err) {
         res.status(500).send()
       }
     }
   } else {
-    query['unit'] = user.unit
+    query.unit = user.unit
   }
 
   const projection = {

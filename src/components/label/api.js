@@ -1,5 +1,8 @@
 const express = require('express')
 const { checkPermissions } = require('../../middlewares')
+const {
+  permissions: { CREATE_LABEL, UPDATE_LABEL, DELETE_LABEL }
+} = require('../../config')
 
 const {
   getLabels,
@@ -11,8 +14,8 @@ const {
 const router = express.Router()
 
 router.get('/', getLabels)
-router.post('/', checkPermissions(['create:label']), createLabel)
-router.put('/:id', checkPermissions(['update:label']), updateLabel)
-router.delete('/:id', checkPermissions(['delete:label']), removeLabel)
+router.post('/', checkPermissions([CREATE_LABEL]), createLabel)
+router.put('/:id', checkPermissions([UPDATE_LABEL]), updateLabel)
+router.delete('/:id', checkPermissions([DELETE_LABEL]), removeLabel)
 
 module.exports = router

@@ -1,20 +1,21 @@
 const express = require('express')
+const { checkPermissions } = require('../../middlewares')
+const {
+  permissions: { UPDATE_COMMENT, DELETE_COMMENT }
+} = require('../../config')
+
 const {
   getIssueEvents,
-  getUnreadEventCount,
   createIssueEvent,
   updateIssueEvent,
-  markEventsRead,
   removeIssueEvent
 } = require('./controller')
 
 const router = express.Router()
 
 router.get('/', getIssueEvents)
-router.get('/unreadEventCount', getUnreadEventCount)
 router.post('/', createIssueEvent)
-router.put('/markEventsRead', markEventsRead)
-router.put('/:id', updateIssueEvent)
-router.delete('/:id', removeIssueEvent)
+router.put('/:id', checkPermissions(UPDATE_COMMENT), updateIssueEvent)
+router.delete('/:id', checkPermissions(DELETE_COMMENT), removeIssueEvent)
 
 module.exports = router

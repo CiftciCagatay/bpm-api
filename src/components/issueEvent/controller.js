@@ -3,7 +3,8 @@ const {
   amqp: {
     queues: { bpmQueue },
     actions: { ISSUE_COMMENT }
-  }
+  },
+  permissions: { READ_ALL_TASKS }
 } = require('../../config')
 
 module.exports.getIssueEvents = (req, res) => {
@@ -14,8 +15,8 @@ module.exports.getIssueEvents = (req, res) => {
 
   let query = req.query
 
-  if (!permissions.includes('read:all_events')) {
-    query.unit = unit
+  if (!permissions.includes(READ_ALL_TASKS)) {
+    query.unitId = unit
   }
 
   issueEvents
@@ -23,28 +24,6 @@ module.exports.getIssueEvents = (req, res) => {
     .then(result => res.status(200).json({ result }))
     .catch(error => {
       console.log(error)
-      res.status(500).send()
-    })
-}
-
-module.exports.getUnreadEventCount = (req, res) => {
-  const {
-    repos: { issueEvents },
-    user: { _id }
-  } = res.locals
-
-  const { issueId } = req.query
-
-  if (!issueId) {
-    res.status(400).send()
-    return
-  }
-
-  issueEvents
-    .getUnreadEventCount({ userId: _id, issueId })
-    .then(count => res.status(200).json({ count }))
-    .catch(err => {
-      console.log(err)
       res.status(500).send()
     })
 }
@@ -74,23 +53,6 @@ module.exports.createIssueEvent = (req, res) => {
 
       res.status(200).json({ result })
     })
-    .catch(error => {
-      console.log(error)
-      res.status(500).send()
-    })
-}
-
-module.exports.markEventsRead = (req, res) => {
-  const {
-    repos: { issueEvents },
-    user: { _id }
-  } = res.locals
-
-  const { issueId } = req.query
-  console.log(_id)
-  issueEvents
-    .markEventsRead({ userId: _id, issueId })
-    .then(res => res.status(200).json(res))
     .catch(error => {
       console.log(error)
       res.status(500).send()

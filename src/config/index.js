@@ -5,8 +5,9 @@ const { tenantService } = require('./components/tenant-service')
 const { authService } = require('./components/auth-service')
 const { service } = require('./components/service')
 const mongo = require('./components/mongo')
+const permissions = require('./components/permissions')
 
 module.exports = Object.assign(
   {},
-  { jwt, server, amqp, tenantService, authService, service, mongo }
+  { jwt, server, amqp, tenantService, authService, service, mongo, permissions }
 )
