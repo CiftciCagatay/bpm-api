@@ -59,7 +59,8 @@ const IssueSchema = new Schema({
 
   labels: [labelSchema],
 
-  deadline: Date
+  deadline: Date,
+  summary: String
 })
 
 module.exports = connection => connection.model('issue', IssueSchema)
