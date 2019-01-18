@@ -40,6 +40,7 @@ const repository = IssueEvent => {
 
     Object.keys(params).forEach(key => {
       switch (key) {
+        case 'unitId':
         case 'issueId':
           query[key] = params[key]
           break
