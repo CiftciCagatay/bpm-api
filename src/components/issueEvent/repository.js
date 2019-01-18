@@ -51,7 +51,7 @@ const repository = IssueEvent => {
     return query
   }
 
-  return { find, getUnreadEventCount, create, update, markEventsRead, remove }
+  return { find, create, update, remove }
 }
 
 module.exports = model => repository(model)
