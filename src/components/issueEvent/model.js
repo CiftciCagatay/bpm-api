@@ -20,6 +20,7 @@ const IssueEventSchema = {
   },
   date: Date,
   comment: String,
+  quoteId: String,
   author: userSchema,
   labels: [labelSchema],
   users: [userSchema],
