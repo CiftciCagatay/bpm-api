@@ -6,6 +6,7 @@ const {
 
 const {
   getIssueEvents,
+  getIssueEvent,
   createIssueEvent,
   updateIssueEvent,
   removeIssueEvent
@@ -14,6 +15,7 @@ const {
 const router = express.Router()
 
 router.get('/', getIssueEvents)
+router.get('/:id', getIssueEvent)
 router.post('/', createIssueEvent)
 router.put('/:id', checkPermissions([UPDATE_COMMENT]), updateIssueEvent)
 router.delete('/:id', checkPermissions([DELETE_COMMENT]), removeIssueEvent)

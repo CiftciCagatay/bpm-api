@@ -22,6 +22,10 @@ const repository = IssueEvent => {
       .limit(limit)
   }
   
+  const findById = _id => {
+    return IssueEvent.findById(_id)
+  }
+
   const create = props => {
     const issueEvent = new IssueEvent({ ...props, date: new Date() })
     return issueEvent.save()
@@ -52,7 +56,7 @@ const repository = IssueEvent => {
     return query
   }
 
-  return { find, create, update, remove }
+  return { find, findById, create, update, remove }
 }
 
 module.exports = model => repository(model)

@@ -28,6 +28,22 @@ module.exports.getIssueEvents = (req, res) => {
     })
 }
 
+module.exports.getIssueEvent = (req, res) => {
+  const {
+    repos: { issueEvents }
+  } = res.locals
+
+  const _id = req.params.id
+
+  issueEvents
+    .findById(_id)
+    .then(result => res.status(200).json({ result }))
+    .catch(error => {
+      console.log(error)
+      res.status(500).send()
+    })
+}
+
 module.exports.createIssueEvent = (req, res) => {
   const {
     repos: { issueEvents, issues }
