@@ -11,6 +11,7 @@ const repository = IssueEvent => {
         limit = parseInt(params.limit)
       } catch (err) {
         console.log(err)
+        limit = -1
       }
 
     if (limit === -1) {
@@ -21,7 +22,7 @@ const repository = IssueEvent => {
       .sort({ [orderBy]: orderDes })
       .limit(limit)
   }
-  
+
   const findById = _id => {
     return IssueEvent.findById(_id)
   }
@@ -41,17 +42,71 @@ const repository = IssueEvent => {
 
   const createQueryByParams = params => {
     let query = {}
+    let userPermissionOr = []
+    let or = []
 
     Object.keys(params).forEach(key => {
-      switch (key) {
-        case 'unitId':
-        case 'issueId':
-          query[key] = params[key]
-          break
-        default:
-          break
+      if (params[key]) {
+        switch (key) {
+          case 'user':
+            const user = params[key]
+            userPermissionOr.push({ unitId: { $in: user.units } })
+            break
+
+          case 'unitId':
+          case 'issueId':
+            query[key] = params[key]
+            break
+
+          case 'units':
+            query['unitId'] = { $in: params[key] }
+            break
+
+          case 'fileExists':
+            query.file = { $exists: params[key] }
+            break
+
+          case 'startDate':
+            if (query.date) {
+              query.date = { ...query.date, $gte: params[key] }
+            } else {
+              query.date = { $gte: params[key] }
+            }
+            break
+
+          case 'endDate':
+            if (query.date) {
+              query.date = { ...query.date, $lte: params[key] }
+            } else {
+              query.date = { $lte: params[key] }
+            }
+            break
+
+          case 'search':
+            const regexp = new RegExp(params[key], 'i')
+
+            // Default filtreler
+            or = [
+              ...or,
+              { comment: regexp },
+              { 'author.name': regexp },
+              { 'file.originalname': regexp }
+            ]
+            break
+
+          default:
+            break
+        }
       }
     })
+
+    if (or.length !== 0) {
+      query.$or = or
+    }
+
+    if (userPermissionOr.length !== 0) {
+      query = { $and: [{ $or: userPermissionOr }, query] }
+    }
 
     return query
   }

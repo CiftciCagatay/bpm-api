@@ -1,5 +1,7 @@
 module.exports.getUnits = (req, res) => {
-  const { repos: { units } } = res.locals
+  const {
+    repos: { units }
+  } = res.locals
 
   units
     .find(req.query)
@@ -11,7 +13,9 @@ module.exports.getUnits = (req, res) => {
 }
 
 module.exports.createUnit = (req, res) => {
-  const { repos: { units } } = res.locals
+  const {
+    repos: { units }
+  } = res.locals
 
   units
     .create(req.body)
@@ -23,10 +27,13 @@ module.exports.createUnit = (req, res) => {
 }
 
 module.exports.updateUnit = (req, res) => {
-  const { repos: { units } } = res.locals
+  const unitId = req.params.id
+  const {
+    repos: { units }
+  } = res.locals
 
   units
-    .update(req.params.id, req.body)
+    .update(unitId, req.body)
     .then(results => res.status(200).json({ results }))
     .catch(error => {
       console.log(error)
@@ -35,10 +42,13 @@ module.exports.updateUnit = (req, res) => {
 }
 
 module.exports.removeUnit = (req, res) => {
-  const { repos: { units } } = res.locals
+  const unitId = req.params.id
+  const {
+    repos: { units }
+  } = res.locals
 
   units
-    .remove(req.params.id)
+    .remove(unitId)
     .then(results => res.status(200).json({ results }))
     .catch(error => {
       console.log(error)

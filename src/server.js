@@ -35,10 +35,7 @@ const startServer = ({ port, repos }) => {
         res.locals.repos = repos[payload.tenantId]
         next()
       })
-      .catch(err => {
-        console.log(err)
-        res.status(401).send()
-      })
+      .catch(() => res.status(401).send())
   })
 
   app.use('/issues', issuesRoute)

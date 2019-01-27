@@ -10,13 +10,13 @@ const {
 module.exports.getIssueEvents = (req, res) => {
   const {
     repos: { issueEvents },
-    user: { unit, permissions }
+    user: { units, permissions }
   } = res.locals
 
   let query = req.query
 
-  if (!permissions.includes(READ_ALL_TASKS)) {
-    query.unitId = unit
+  if (!permissions.includes(READ_ALL_TASKS) && !query.issueId) {
+    query.user = { units: Object.keys(units) }
   }
 
   issueEvents

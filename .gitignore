@@ -80,3 +80,4 @@ typings/
 .dynamodb/
 
 push.sh
+push.test.sh

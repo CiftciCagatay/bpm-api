@@ -10,7 +10,7 @@ const {
 module.exports.getIssues = (req, res) => {
   const {
     repos: { issues },
-    user: { unit, permissions }
+    user: { _id, permissions, units }
   } = res.locals
 
   var { limit, offset, orderBy, ...rest } = req.query
@@ -22,11 +22,11 @@ module.exports.getIssues = (req, res) => {
   let query = { limit, offset, orderBy }
 
   if (!permissions.includes(READ_ALL_TASKS)) {
-    query.unit = unit
+    query.user = { _id, units: Object.keys(units) }
   }
 
   issues
-    .find({ ...query, ...rest })
+    .find({ ...rest, ...query })
     .then(result => res.status(200).json({ result }))
     .catch(error => {
       console.log(error)
@@ -72,11 +72,27 @@ module.exports.getIssueById = (req, res) => {
 
 module.exports.getIssueCountByConditions = (req, res) => {
   const {
-    repos: { issues }
+    repos: { issues },
+    user
   } = res.locals
 
+  let { units } = req.query
+  let query = req.query
+
+  if (user.permissions.includes(READ_ALL_TASKS)) {
+    if (units) {
+      try {
+        query.user = { units: JSON.parse(units) }
+      } catch (err) {
+        res.status(500).send()
+      }
+    }
+  } else {
+    query.user = { _id: user._id, units: Object.keys(user.units) }
+  }
+
   issues
-    .getCount(req.query)
+    .getCount(query)
     .then(result => res.status(200).json({ result }))
     .catch(error => {
       console.log(error)
@@ -276,11 +292,26 @@ module.exports.getTopProblemCreators = (req, res) => {
   const { startDate, endDate, unit } = req.query
 
   const {
-    repos: { issues }
+    repos: { issues },
+    user
   } = res.locals
 
+  let units = []
+
+  if (user.permissions.includes(READ_ALL_TASKS)) {
+    if (units) {
+      try {
+        units = JSON.parse(units)
+      } catch (err) {
+        res.status(500).send()
+      }
+    }
+  } else {
+    units = Object.keys(user.units)
+  }
+
   issues
-    .getTotalProblemCountByUser(startDate, endDate, unit)
+    .getTotalProblemCountByUser(startDate, endDate, units)
     .then(results => res.status(200).json(results))
     .catch(error => res.status(500).send())
 }
@@ -305,13 +336,13 @@ module.exports.getIssuesByUsersReport = (req, res) => {
   if (user.permissions.includes(READ_ALL_TASKS)) {
     if (units) {
       try {
-        query.units = JSON.parse(units)
+        query.user = { units: JSON.parse(units) }
       } catch (err) {
         res.status(500).send()
       }
     }
   } else {
-    query.unit = user.unit
+    query.user = { units: Object.keys(user.units) }
   }
 
   const projection = {

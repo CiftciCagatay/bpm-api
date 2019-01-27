@@ -2,6 +2,7 @@ const express = require('express')
 const multer = require('multer')
 const crypto = require('crypto')
 const path = require('path')
+const ctrl = require('./controller')
 
 const router = express.Router()
 
@@ -19,6 +20,8 @@ const storage = multer.diskStorage({
 })
 
 const upload = multer({ storage })
+
+router.get('/', ctrl.getFiles)
 
 router.post('/', upload.array('uploads', 5), function(req, res) {
   res.status(200).json(req.files)

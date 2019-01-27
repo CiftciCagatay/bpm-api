@@ -2,7 +2,7 @@ const repository = Issue => {
   const find = ({ orderBy, limit, offset, ...params }, projection = {}) => {
     const query = createQueryByParams(params)
     let sort = {}
-    
+
     sort[orderBy] = -1
 
     return Issue.find(query, projection)
@@ -113,7 +113,7 @@ const repository = Issue => {
     ])
   }
 
-  const getCountsByIsOpen = (startDate, endDate, unitId) => {
+  const getCountsByIsOpen = (startDate, endDate, units) => {
     let query = {}
 
     if (startDate || endDate) query['createdAt'] = {}
@@ -124,7 +124,7 @@ const repository = Issue => {
     if (endDate && new Date(endDate))
       query['createdAt']['$lte'] = new Date(endDate)
 
-    if (unitId) query['unit._id'] = unitId
+    if (units.length !== 0) query['unit._id'] = { $in: units }
 
     return Issue.aggregate([
       {
@@ -209,16 +209,23 @@ const repository = Issue => {
   //
   const createQueryByParams = params => {
     let query = {}
+    let or = []
+    let userPermissionOr = []
 
     Object.keys(params).forEach(key => {
       switch (key) {
+        case 'user':
+          const user = params[key]
+          userPermissionOr.push({ 'unit._id': { $in: user.units } })
+          userPermissionOr.push({ 'createdBy._id': user._id })
+          break
         case 'units':
-          query['unit._id'] = { $in: params[key] }
+          or.push({ 'unit._id': { $in: params[key] } })
           break
         case 'unit':
         case 'createdBy':
         case 'solvedBy':
-          query[`${key}._id`] = params[key]
+          or.push({ [`${key}._id`]: params[key] })
           break
         case 'category':
         case 'subCategory':
@@ -240,7 +247,8 @@ const repository = Issue => {
           const regexp = new RegExp(params[key], 'i')
 
           // Default filtreler
-          let or = [
+          or = [
+            ...or,
             { title: regexp },
             { 'category.text': regexp },
             { 'subCategory.text': regexp }
@@ -260,13 +268,6 @@ const repository = Issue => {
           // Eğer kapalı sorunlara bakıyorsak ve sorunu çözen ayrıca belirtilmemişse filtrele
           if (!query.solvedBy && !query.isOpen)
             or.push({ 'solvedBy.name': regexp })
-
-          const searchQuery = {
-            $or: or
-          }
-
-          query = { ...query, ...searchQuery }
-
           break
         case 'createdAt':
           query[key] = { $gte: new Date(params[key]) }
@@ -296,6 +297,14 @@ const repository = Issue => {
           break
       }
     })
+
+    if (or.length !== 0) {
+      query.$or = or
+    }
+
+    if (userPermissionOr.length !== 0) {
+      query = { $and: [{ $or: userPermissionOr }, query] }
+    }
 
     return query
   }
