@@ -13,12 +13,16 @@ const categoryRepository = require('../components/category/repository')
 const unitModel = require('../components/unit/model')
 const unitRepository = require('../components/unit/repository')
 
+const activityModel = require('../components/activity/model')
+const activityRepository = require('../components/activity/repository')
+
 module.exports = connection => {
   return {
     labels: labelRepository(labelModel(connection)),
     issues: issueRepository(issueModel(connection)),
     issueEvents: issueEventRepository(issueEventModel(connection)),
     categories: categoryRepository(categoryModel(connection)),
-    units: unitRepository(unitModel(connection))
+    units: unitRepository(unitModel(connection)),
+    activities: activityRepository(activityModel(connection))
   }
 }

@@ -6,6 +6,7 @@ const {
   },
   permissions: { READ_ALL_TASKS }
 } = require('../../config')
+const { sendNotification } = require('../../utils')
 
 module.exports.getIssues = (req, res) => {
   const {
@@ -143,26 +144,46 @@ module.exports.updateIssue = (req, res) => {
 
 module.exports.updateIssueStatus = (req, res) => {
   const {
-    repos: { issues },
-    user: { tenantId }
+    repos: { issues, issueEvents },
+    user
   } = res.locals
 
   const { isOpen } = req.body
 
   issues
-    .update(req.params.id, { isOpen })
+    .update(req.params.id, { isOpen, solvedBy: isOpen ? null : user })
     .then(issue => {
-      // Send 'Issue Status Update' message through AMQP Channel
-      const { _id, createdBy, solvedBy, unit, assignees } = issue
-      const message = JSON.stringify({
-        type: isOpen ? ISSUE_REOPENED : ISSUE_SOLVED,
-        payload: { _id, createdBy, solvedBy, unit, assignees, tenantId }
+      const { _id, title, unit, assignees } = issue
+
+      sendNotification({
+        token: req.headers.authorization,
+        body: {
+          message: `${user.name} ${title} işini ${
+            isOpen ? '"Devam Ediyor"' : '"Tamamlandı"'
+          } olarak işaretledi.`,
+          payload: {
+            type: isOpen ? ISSUE_REOPENED : ISSUE_SOLVED,
+            issueId: _id
+          },
+          filters: {
+            unit: unit._id,
+            userIdsIn: assignees.map(({ _id }) => _id),
+            userIdsNotIn: [user._id],
+            tenantId: user.tenantId
+          }
+        }
       })
 
-      channel.then(ch => ch.sendToQueue(bpmQueue, new Buffer(message)))
-
-      res.status(200).send()
+      // Create event
+      return issueEvents.create({
+        unitId: unit._id,
+        issueId: req.params.id,
+        author: user,
+        date: new Date(),
+        type: isOpen ? 'resolve' : 'reopen'
+      })
     })
+    .then(result => res.status(200).json(result))
     .catch(err => {
       console.log(err)
       res.status(500).send()
@@ -187,12 +208,53 @@ module.exports.updateIssuePriority = (req, res) => {
 
 module.exports.updateIssueLabels = (req, res) => {
   const {
-    repos: { issues }
+    repos: { issues, issueEvents },
+    user: { _id, name }
   } = res.locals
 
   issues
     .updateLabels(req.params.id, req.body.labels)
-    .then(result => res.json(result))
+    .then(({ unit, labels }) => {
+      let ids = labels.map(({ _id }) => _id)
+      const addedLabels = req.body.labels.filter(
+        ({ _id }) => ids.indexOf(_id) === -1
+      )
+
+      ids = req.body.labels.map(({ _id }) => _id)
+      const removedLabels = labels.filter(({ _id }) => ids.indexOf(_id) === -1)
+
+      let promises = []
+
+      const commonProps = {
+        unitId: unit._id,
+        issueId: req.params.id,
+        author: { _id, name },
+        date: new Date()
+      }
+
+      if (addedLabels.length !== 0) {
+        promises.push(
+          issueEvents.create({
+            ...commonProps,
+            type: 'addLabel',
+            labels: addedLabels
+          })
+        )
+      }
+
+      if (removedLabels.length !== 0) {
+        promises.push(
+          issueEvents.create({
+            ...commonProps,
+            type: 'removeLabel',
+            labels: removedLabels
+          })
+        )
+      }
+
+      return Promise.all(promises)
+    })
+    .then(result => res.status(200).json(result))
     .catch(error => {
       console.log(error)
       res.status(500).json({ error })
@@ -201,27 +263,74 @@ module.exports.updateIssueLabels = (req, res) => {
 
 module.exports.updateIssueAssignees = (req, res) => {
   const {
-    repos: { issues },
-    user: { _id, name, tenantId }
+    repos: { issues, issueEvents },
+    user
   } = res.locals
 
   issues
     .updateAssignees(req.params.id, req.body.assignees)
-    .then(result => {
-      const message = JSON.stringify({
-        type: ISSUE_ASSIGNED,
-        payload: {
-          assignees: req.body.assignees,
-          issueId: result._id,
-          assignedBy: { _id, name },
-          tenantId
+    .then(({ _id, title, unit, assignees }) => {
+      // Diff assignees
+      let ids = assignees.map(({ _id }) => _id)
+      const addedAssignees = req.body.assignees.filter(
+        ({ _id }) => ids.indexOf(_id) === -1
+      )
+
+      ids = req.body.assignees.map(({ _id }) => _id)
+      const removedAssignees = assignees.filter(
+        ({ _id }) => ids.indexOf(_id) === -1
+      )
+
+      // Send notification to added assignees
+      sendNotification({
+        token: req.headers.authorization,
+        body: {
+          message: `${user.name} ${title} işini size atadı.`,
+          payload: {
+            issueId: _id,
+            assignedBy: user
+          },
+          filters: {
+            userIdsIn: addedAssignees.map(({ _id }) => _id),
+            userIdsNotIn: [user._id],
+            tenantId: user.tenantId
+          }
         }
       })
 
-      channel.then(ch => ch.sendToQueue(bpmQueue, new Buffer(message)))
+      // Create events
+      let promises = []
 
-      res.json(result)
+      const commonProps = {
+        unitId: unit._id,
+        issueId: req.params.id,
+        author: user,
+        date: new Date()
+      }
+
+      if (addedAssignees.length !== 0) {
+        promises.push(
+          issueEvents.create({
+            ...commonProps,
+            type: 'assign',
+            users: addedAssignees
+          })
+        )
+      }
+
+      if (removedAssignees.length !== 0) {
+        promises.push(
+          issueEvents.create({
+            ...commonProps,
+            type: 'unassign',
+            users: removedAssignees
+          })
+        )
+      }
+
+      return Promise.all(promises)
     })
+    .then(result => res.status(200).json(result))
     .catch(error => {
       console.log(error)
       res.status(500).json({ error })

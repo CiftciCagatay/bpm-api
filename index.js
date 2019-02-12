@@ -6,7 +6,7 @@ const {
   service
 } = require('./src/config')
 
-console.log(`Starting with ${service.onPremise ? 'onPrem' : 'cloud'} mode...`)
+console.log(`Starting with ${service.onPremise ? 'on premise' : 'cloud'} mode...`)
 
 getTenants()
   .then(async tenants => {

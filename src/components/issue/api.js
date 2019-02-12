@@ -11,11 +11,11 @@ router.get('/:id', ctrl.getIssueById)
 
 router.post('/', ctrl.createIssue)
 
-router.put('/:id', ctrl.updateIssue)
 router.put('/:id/isOpen', ctrl.updateIssueStatus)
 router.put('/:id/priority', ctrl.updateIssuePriority)
 router.put('/:id/labels', ctrl.updateIssueLabels)
 router.put('/:id/assignees', ctrl.updateIssueAssignees)
+router.put('/:id', ctrl.updateIssue)
 
 router.delete('/:id', ctrl.removeIssue)
 

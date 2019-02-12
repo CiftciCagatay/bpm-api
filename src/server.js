@@ -10,6 +10,7 @@ const categoriesRoute = require('./components/category/api')
 const unitsRoute = require('./components/unit/api')
 const labelsRoute = require('./components/label/api')
 const filesRoute = require('./components/file/api')
+const activityRoute = require('./components/activity/api')
 
 const startServer = ({ port, repos }) => {
   if (!port) {
@@ -23,12 +24,7 @@ const startServer = ({ port, repos }) => {
   const app = express()
   let publicJWTKey = ''
 
-  app.use('/', bodyParser.json())
-  app.use('/', cors())
-  app.use('/files', express.static('/files'))
-
-  // Authorization
-  app.use('/', (req, res, next) => {
+  const verifyJWTMiddleware = (req, res, next) =>
     verifyJWT(req.headers.authorization, publicJWTKey)
       .then(payload => {
         res.locals.user = payload
@@ -36,14 +32,20 @@ const startServer = ({ port, repos }) => {
         next()
       })
       .catch(() => res.status(401).send())
-  })
+
+  app.use('/', bodyParser.json())
+  app.use('/', cors())
+  app.use('/files', express.static('/files'), verifyJWTMiddleware, filesRoute)
+
+  // Authorization
+  app.use('/', verifyJWTMiddleware)
 
   app.use('/issues', issuesRoute)
   app.use('/issueEvents', issueEventsRoute)
   app.use('/categories', categoriesRoute)
   app.use('/units', unitsRoute)
   app.use('/labels', labelsRoute)
-  app.use('/files', filesRoute)
+  app.use('/activities', activityRoute)
 
   return getPublicJWTKey().then(key => {
     publicJWTKey = key
